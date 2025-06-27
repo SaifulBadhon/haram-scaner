@@ -25,12 +25,16 @@ function scanImage() {
 
   const img = new Image();
   img.onload = () => {
+    // Set real canvas size to match image resolution
     canvas.width = img.width;
     canvas.height = img.height;
+
+    // Draw full-resolution image
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0);
 
-    Tesseract.recognize(img.src, 'eng', { logger: m => console.log(m) })
+    // Let Tesseract scan it
+    Tesseract.recognize(img.src, 'eng')
       .then(({ data }) => {
         const lowerText = data.text.toLowerCase();
         const found = haramList.filter(item => lowerText.includes(item));
@@ -43,10 +47,10 @@ function scanImage() {
           resultBox.style.color = 'green';
         }
 
-        // Draw boxes on detected words
-        ctx.font = "18px Arial";
-        ctx.strokeStyle = "red";
-        ctx.fillStyle = "red";
+        // Draw boxes over detected haram words
+        ctx.strokeStyle = 'red';
+        ctx.fillStyle = 'red';
+        ctx.font = '20px Arial';
         ctx.lineWidth = 2;
 
         data.words.forEach(word => {
