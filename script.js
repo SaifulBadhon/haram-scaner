@@ -8,32 +8,29 @@ const haramList = [
   'e904', 'e913', 'e920', 'e921'
 ];
 
-function scanImage() {
-  const imageInput = document.getElementById('imageInput');
-  const imageFile = imageInput.files[0];
-  const resultBox = document.getElementById('result');
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d');
+const imageInput = document.getElementById('imageInput');
+const resultBox = document.getElementById('result');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
-  if (!imageFile) {
-    alert("Please select an image.");
-    return;
-  }
+imageInput.addEventListener('change', () => {
+  const imageFile = imageInput.files[0];
+  if (!imageFile) return;
 
   resultBox.innerText = "🔍 Scanning...";
   resultBox.style.color = "black";
+  canvas.style.display = 'none'; // hide canvas until image is ready
 
   const img = new Image();
   img.onload = () => {
-    // Set real canvas size to match image resolution
+    // Set canvas size
     canvas.width = img.width;
     canvas.height = img.height;
 
-    // Draw full-resolution image
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0);
+    canvas.style.display = 'block'; // show only after image is drawn
 
-    // Let Tesseract scan it
     Tesseract.recognize(img.src, 'eng')
       .then(({ data }) => {
         const lowerText = data.text.toLowerCase();
@@ -47,11 +44,11 @@ function scanImage() {
           resultBox.style.color = 'green';
         }
 
-        // Draw boxes over detected haram words
+        // Draw boxes
         ctx.strokeStyle = 'red';
         ctx.fillStyle = 'red';
-        ctx.font = '20px Arial';
         ctx.lineWidth = 2;
+        ctx.font = '20px Arial';
 
         data.words.forEach(word => {
           const cleanWord = word.text.toLowerCase().replace(/[^a-z0-9\-]/g, '');
@@ -69,4 +66,4 @@ function scanImage() {
   };
 
   img.src = URL.createObjectURL(imageFile);
-}
+});
