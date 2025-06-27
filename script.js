@@ -21,27 +21,26 @@ imageInput.addEventListener('change', () => {
   resultBox.style.color = 'black';
   canvas.style.display = 'none';
 
+  const img = new Image();
   const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      // Resize image if too large (for phones)
-      const MAX_WIDTH = 800;
-      const scale = Math.min(1, MAX_WIDTH / img.width);
-      const newWidth = img.width * scale;
-      const newHeight = img.height * scale;
 
-      canvas.width = newWidth;
-      canvas.height = newHeight;
-      ctx.clearRect(0, 0, newWidth, newHeight);
-      ctx.drawImage(img, 0, 0, newWidth, newHeight);
+  reader.onload = function () {
+    img.onload = () => {
+      // Resize to safe width for mobile
+      const maxWidth = 800;
+      const scale = Math.min(1, maxWidth / img.width);
+      const width = img.width * scale;
+      const height = img.height * scale;
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
       canvas.style.display = 'block';
 
-      const imageDataURL = canvas.toDataURL('image/jpeg');
+      const imageData = canvas.toDataURL('image/jpeg', 0.8);
 
-      Tesseract.recognize(imageDataURL, 'eng', {
-        logger: m => console.log(m)
-      })
+      Tesseract.recognize(imageData, 'eng')
         .then(({ data }) => {
           const found = haramList.filter(haram =>
             data.text.toLowerCase().includes(haram)
@@ -55,7 +54,7 @@ imageInput.addEventListener('change', () => {
             resultBox.style.color = 'green';
           }
 
-          // Draw bounding boxes
+          // Highlight words
           ctx.strokeStyle = 'red';
           ctx.fillStyle = 'red';
           ctx.lineWidth = 2;
@@ -77,16 +76,16 @@ imageInput.addEventListener('change', () => {
     };
 
     img.onerror = () => {
-      resultBox.textContent = "❗ Image could not be loaded";
-      resultBox.style.color = "red";
+      resultBox.textContent = '❗ Image load failed.';
+      resultBox.style.color = 'red';
     };
 
     img.src = reader.result;
   };
 
   reader.onerror = () => {
-    resultBox.textContent = "❗ Failed to read file.";
-    resultBox.style.color = "red";
+    resultBox.textContent = '❗ Could not read file.';
+    resultBox.style.color = 'red';
   };
 
   reader.readAsDataURL(file);
