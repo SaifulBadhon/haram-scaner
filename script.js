@@ -25,13 +25,23 @@ imageInput.addEventListener('change', () => {
   reader.onload = () => {
     const img = new Image();
     img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
+      // Resize image if too large (for phones)
+      const MAX_WIDTH = 800;
+      const scale = Math.min(1, MAX_WIDTH / img.width);
+      const newWidth = img.width * scale;
+      const newHeight = img.height * scale;
+
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      ctx.clearRect(0, 0, newWidth, newHeight);
+      ctx.drawImage(img, 0, 0, newWidth, newHeight);
       canvas.style.display = 'block';
 
-      Tesseract.recognize(img, 'eng')
+      const imageDataURL = canvas.toDataURL('image/jpeg');
+
+      Tesseract.recognize(imageDataURL, 'eng', {
+        logger: m => console.log(m)
+      })
         .then(({ data }) => {
           const found = haramList.filter(haram =>
             data.text.toLowerCase().includes(haram)
@@ -45,35 +55,39 @@ imageInput.addEventListener('change', () => {
             resultBox.style.color = 'green';
           }
 
-          // Highlight words
+          // Draw bounding boxes
           ctx.strokeStyle = 'red';
           ctx.fillStyle = 'red';
           ctx.lineWidth = 2;
-          ctx.font = '20px Arial';
+          ctx.font = '16px Arial';
 
           data.words.forEach(word => {
             const clean = word.text.toLowerCase().replace(/[^a-z0-9\-]/g, '');
             if (haramList.includes(clean)) {
               const { x0, y0, x1, y1 } = word.bbox;
-              ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
-              ctx.fillText(clean, x0, y0 - 5);
+              ctx.strokeRect(x0 * scale, y0 * scale, (x1 - x0) * scale, (y1 - y0) * scale);
+              ctx.fillText(clean, x0 * scale, y0 * scale - 5);
             }
           });
         })
-        .catch(error => {
-          resultBox.textContent = '❗ OCR failed: ' + error.message;
+        .catch(err => {
+          resultBox.textContent = '❗ OCR failed: ' + err.message;
           resultBox.style.color = 'red';
         });
     };
+
     img.onerror = () => {
-      resultBox.textContent = "❗ Image load failed";
+      resultBox.textContent = "❗ Image could not be loaded";
       resultBox.style.color = "red";
     };
+
     img.src = reader.result;
   };
+
   reader.onerror = () => {
-    resultBox.textContent = "❗ Could not read image file";
+    resultBox.textContent = "❗ Failed to read file.";
     resultBox.style.color = "red";
   };
+
   reader.readAsDataURL(file);
 });
