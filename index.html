@@ -4,17 +4,14 @@
   <meta charset="UTF-8">
   <title>HalalCheck Web</title>
   <link rel="stylesheet" href="style.css">
-<!--   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script> -->
-
 </head>
 <body>
   <h1>Halal Ingredient Scanner</h1>
-  <input type="file" id="imageInput" accept="image/*">
-  <button onclick="scanImage()">Check Ingredients</button>
+  <input type="file" id="imageInput" accept="image/*" capture="environment">
   <p id="result"></p>
+  <canvas id="canvas" style="max-width: 100%; height: auto; display: none; border: 1px solid #ccc; margin: 20px auto;"></canvas>
 
-  <canvas id="canvas" style="max-width: 100%; height: auto; border: 1px solid #ccc; display: block; margin: 20px auto;"></canvas>
-  <script src="tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
