@@ -14,56 +14,60 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 imageInput.addEventListener('change', () => {
-  const imageFile = imageInput.files[0];
-  if (!imageFile) return;
+  const file = imageInput.files[0];
+  if (!file) return;
 
-  resultBox.innerText = "🔍 Scanning...";
-  resultBox.style.color = "black";
-  canvas.style.display = 'none'; // hide canvas until image is ready
+  resultBox.textContent = '🔍 Scanning...';
+  resultBox.style.color = 'black';
+  canvas.style.display = 'none';
 
   const img = new Image();
+  const imgURL = URL.createObjectURL(file);
+
   img.onload = () => {
-    // Set canvas size
     canvas.width = img.width;
     canvas.height = img.height;
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0);
-    canvas.style.display = 'block'; // show only after image is drawn
+    canvas.style.display = 'block';
 
-    Tesseract.recognize(img.src, 'eng')
+    Tesseract.recognize(imgURL, 'eng')
       .then(({ data }) => {
-        const lowerText = data.text.toLowerCase();
-        const found = haramList.filter(item => lowerText.includes(item));
+        const found = haramList.filter(haram =>
+          data.text.toLowerCase().includes(haram)
+        );
 
         if (found.length > 0) {
-          resultBox.innerText = `❌ Haram Ingredients Found: ${found.join(', ')}`;
+          resultBox.textContent = `❌ Haram Ingredients Found: ${found.join(', ')}`;
           resultBox.style.color = 'red';
         } else {
-          resultBox.innerText = `✅ No Haram Ingredients Found.`;
+          resultBox.textContent = `✅ No Haram Ingredients Found.`;
           resultBox.style.color = 'green';
         }
 
-        // Draw boxes
+        // Draw red boxes
         ctx.strokeStyle = 'red';
         ctx.fillStyle = 'red';
         ctx.lineWidth = 2;
         ctx.font = '20px Arial';
 
         data.words.forEach(word => {
-          const cleanWord = word.text.toLowerCase().replace(/[^a-z0-9\-]/g, '');
-          if (haramList.includes(cleanWord)) {
+          const clean = word.text.toLowerCase().replace(/[^a-z0-9\-]/g, '');
+          if (haramList.includes(clean)) {
             const { x0, y0, x1, y1 } = word.bbox;
             ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
-            ctx.fillText(cleanWord, x0, y0 - 5);
+            ctx.fillText(clean, x0, y0 - 5);
           }
         });
+
+        URL.revokeObjectURL(imgURL);
       })
-      .catch(err => {
-        resultBox.innerText = "❗ OCR failed: " + err.message;
+      .catch(error => {
+        resultBox.textContent = '❗ OCR failed: ' + error.message;
         resultBox.style.color = 'red';
+        URL.revokeObjectURL(imgURL);
       });
   };
 
-  img.src = URL.createObjectURL(imageFile);
+  img.src = imgURL;
 });
