@@ -1,72 +1,19 @@
 const haramList = [
-  'gelatin',
-  'alcohol',
-  'enzymes',
-  'e120',
-  'carmine',
-  'lard',
-  'rennet',
-  'lipase',
-  'glycerin',
-  'mono- and diglycerides',
-  'pepsin',
-  'trypsin',
-  'whey',
-  'casein',
-  'cochineal',
-  'emulsifier e471',
-  'emulsifier e472',
-  'vanilla extract',
-  'shortening',
-  'animal fat',
-  'animal-derived',
-  'pork',
-  'bacon',
-  'ham',
-  'beer',
-  'wine',
-  'rum',
-  'brandy',
-  'whiskey',
-  'ethanol',
-  'margarine',
-  'natural flavors',
-  'yeast extract',
-  'cysteine',
-  'e1105',
-  'e904',
-  'e913',
-  'e920',
-  'e921'
+  'gelatin', 'alcohol', 'enzymes', 'e120', 'carmine', 'lard', 'rennet',
+  'lipase', 'glycerin', 'mono- and diglycerides', 'pepsin', 'trypsin',
+  'whey', 'casein', 'cochineal', 'emulsifier e471', 'emulsifier e472',
+  'vanilla extract', 'shortening', 'animal fat', 'animal-derived', 'pork',
+  'bacon', 'ham', 'beer', 'wine', 'rum', 'brandy', 'whiskey', 'ethanol',
+  'margarine', 'natural flavors', 'yeast extract', 'cysteine', 'e1105',
+  'e904', 'e913', 'e920', 'e921'
 ];
-
-function resizeImage(file, maxWidth = 800, callback) {
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    const img = new Image();
-    img.onload = function () {
-      const canvas = document.createElement('canvas');
-      const scale = maxWidth / img.width;
-      canvas.width = maxWidth;
-      canvas.height = img.height * scale;
-
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      canvas.toBlob(blob => {
-        const blobUrl = URL.createObjectURL(blob);
-        callback(blobUrl);
-      }, 'image/jpeg');
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
 
 function scanImage() {
   const imageInput = document.getElementById('imageInput');
   const imageFile = imageInput.files[0];
   const resultBox = document.getElementById('result');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
 
   if (!imageFile) {
     alert("Please select an image.");
@@ -76,12 +23,18 @@ function scanImage() {
   resultBox.innerText = "🔍 Scanning...";
   resultBox.style.color = "black";
 
-  resizeImage(imageFile, 800, (resizedURL) => {
-    Tesseract.recognize(resizedURL, 'eng')
-      .then(({ data: { text } }) => {
-        const lowerText = text.toLowerCase();
+  const img = new Image();
+  img.onload = () => {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+
+    Tesseract.recognize(img.src, 'eng', { logger: m => console.log(m) })
+      .then(({ data }) => {
+        const lowerText = data.text.toLowerCase();
         const found = haramList.filter(item => lowerText.includes(item));
-        
+
         if (found.length > 0) {
           resultBox.innerText = `❌ Haram Ingredients Found: ${found.join(', ')}`;
           resultBox.style.color = 'red';
@@ -90,11 +43,26 @@ function scanImage() {
           resultBox.style.color = 'green';
         }
 
-        URL.revokeObjectURL(resizedURL); // clean up
+        // Draw boxes on detected words
+        ctx.font = "18px Arial";
+        ctx.strokeStyle = "red";
+        ctx.fillStyle = "red";
+        ctx.lineWidth = 2;
+
+        data.words.forEach(word => {
+          const cleanWord = word.text.toLowerCase().replace(/[^a-z0-9\-]/g, '');
+          if (haramList.includes(cleanWord)) {
+            const { x0, y0, x1, y1 } = word.bbox;
+            ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+            ctx.fillText(cleanWord, x0, y0 - 5);
+          }
+        });
       })
       .catch(err => {
         resultBox.innerText = "❗ OCR failed: " + err.message;
         resultBox.style.color = 'red';
       });
-  });
+  };
+
+  img.src = URL.createObjectURL(imageFile);
 }
