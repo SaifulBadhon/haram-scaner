@@ -2,14 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>HalalCheck Web</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Halal Ingredient Scanner</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 20px;
+      padding: 10px;
+    }
+    h1 {
+      font-size: 1.5em;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    canvas {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #ccc;
+      display: none;
+      margin: 20px auto;
+    }
+  </style>
 </head>
 <body>
   <h1>Halal Ingredient Scanner</h1>
   <input type="file" id="imageInput" accept="image/*" capture="environment">
-  <p id="result"></p>
-  <canvas id="canvas" style="max-width: 100%; height: auto; display: none; border: 1px solid #ccc; margin: 20px auto;"></canvas>
+  <p id="result">Please upload an image to scan.</p>
+  <canvas id="canvas"></canvas>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
   <script src="script.js"></script>
